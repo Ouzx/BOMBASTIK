@@ -14,7 +14,7 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 
-#define F_CPU 16000000UL
+// #define FCPU 16000000UL
 #define BAUD 9600
 #define BRC ((F_CPU / 16 / BAUD) - 1)
 
@@ -33,6 +33,11 @@ uint8_t rx_buffer_write_pos = 0; // Index of the next free space in the buffer
 
 char read_from_rx_buffer();
 char peek_from_rx_buffer();
+
+#include <SPI.h>
+#include <Adafruit_PCD8544.h>
+Adafruit_PCD8544 display = Adafruit_PCD8544(7, 6, 5, 4, 3);
+void println(String str);
 
 // void uart_init(void);
 
@@ -57,33 +62,61 @@ void setup()
   pinMode(13, OUTPUT);
 
   sei(); // turn on external interrupts
+  display.begin();
+  display.clearDisplay();
+
+  // text display tests
+  display.setTextSize(1);
+  display.setCursor(0, 0);
+
+  display.println("Hello, world!");
+  display.clearDisplay();
+  display.display();
 }
 bool done = false;
 void loop()
 {
-  // char *cx = "Hello World!\n\r";
-  // send_buffer(cx);
-  // _delay_ms(1000);
 
   char temp = read_from_rx_buffer();
-  if ((temp != 'a' || temp != 'b') && !done)
-  {
-    send_buffer("1");
-  }
+  // if ((temp != 'a' || temp != 'b') && !done)
+  // {
+  //   send_buffer("1");
+  // }
 
-  if (temp == 'b')
+  if (temp == '1')
   {
     digitalWrite(13, HIGH);
-    send_buffer("1");
+    send_buffer("a");
     done = true;
+    println("PIN 13 ON");
   }
-  else if (temp == 'a')
+  else if (temp == '0')
   {
     digitalWrite(13, LOW);
-    send_buffer("0");
+    send_buffer("b");
     done = true;
+    println("PIN 13 OFF");
   }
   delay(100);
+}
+
+// LCD
+byte line_counter = 0;
+void println(String str)
+{
+  if (line_counter < 6)
+  {
+    display.println(str);
+  }
+  else
+  {
+    display.clearDisplay();
+    line_counter = 0;
+    display.setCursor(0, 0);
+    display.println(str);
+  }
+  line_counter++;
+  display.display();
 }
 
 // TX
